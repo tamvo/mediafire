@@ -3,7 +3,7 @@ require 'net/http'
 require 'net/http/post/multipart'
 require 'net/http/uploadprogress'
 
-Net::HTTP.version_1_1
+# Net::HTTP.version_1_1
 
 module Mediafire
   module Connection
@@ -76,7 +76,7 @@ module Mediafire
     rescue Timeout::Error => e
       return nil
     end
-    
+
     private
 
     def check_statuscode(response)

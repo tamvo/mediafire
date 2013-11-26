@@ -1,17 +1,30 @@
+require "open-uri"
+
 module Mediafire
   module API
     include Mediafire::Connection
 
-    def login(account, password)
+    def login(email, password, application_id=nil, api_key=nil)
       @cookie = {}
       toppage
       unless is_loggedin?
         options = {
-          :login_email => account,
+          :login_email => email,
           :login_pass => password,
           :login_remember => 'on',
         }
         post("dynamic/login.php", options)
+        if application_id && api_key
+          query = []
+          query << "email=#{email}"
+          query << "password=#{password}"
+          query << "application_id=#{application_id}"
+          query << "signature=#{Digest::SHA1.hexdigest("#{email}#{password}#{application_id}#{api_key}")}"
+
+          page = open("https://www.mediafire.com/api/user/get_session_token.php?#{query.join("&")}")
+          doc = Nokogiri::XML(page.read)
+          @token = doc.xpath('//session_token').text
+        end
       end
       if @cookie.key?('user')
         @loggedin = true
@@ -498,7 +511,7 @@ module Mediafire
         query << "privacy_recursive=#{options['privacy_recursive']}"
       end
       query << "quick_key=#{file.key}"
-      
+
       if file.is_folder?
         response = get("api/folder/update.php?#{query.join('&')}")
       else
@@ -586,13 +599,7 @@ module Mediafire
     # Utilities
 
     def session_token
-      if defined?(@token)
-        return @token
-      end
-
-      response = get('myfiles.php')
-      @token = /[0-9a-f]{144}/.match(response.body)[0]
-      return @token
+      return @token if defined?(@token)
     end
 
     def create_list(files)
