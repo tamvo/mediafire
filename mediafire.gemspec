@@ -22,4 +22,5 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "json", ">= 1.6.1"
   s.add_runtime_dependency "multipart-post", ">= 1.1.3"
   s.add_runtime_dependency "net-http-uploadprogress", ">= 1.0.0"
+  s.add_runtime_dependency "activesupport", ">= 3.2"
 end

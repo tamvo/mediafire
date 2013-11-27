@@ -1,4 +1,5 @@
 require "open-uri"
+require 'active_support/core_ext/hash/conversions'
 
 module Mediafire
   module API
@@ -159,6 +160,18 @@ module Mediafire
 
     def upload(filepath, folder=nil)
       filename = File.basename(filepath)
+
+      page = open("http://www.mediafire.com/api/folder/get_content.php?session_token=#{@token}&content_type=folders")
+      doc = Nokogiri::XML(page.read)
+
+      folder_key = nil
+      if folder
+        folder_nodes = doc.xpath("//name[text()='#{folder}']")
+        if folder_nodes.length > 0
+          folder_key = folder_nodes.first.parent.css("folderkey").text
+        end
+      end
+
       keys = {}
       response = get('basicapi/uploaderconfiguration.php')
       doc = Nokogiri::XML(response.body)
@@ -167,11 +180,12 @@ module Mediafire
         keys[:ukey] = c.xpath('./ukey').text
         keys[:upload_session] = c.xpath('./upload_session').text
         keys[:trackkey] = c.xpath('./trackkey').text
-        if folder.nil?
-          keys[:folderkey] = c.xpath('./folderkey').text
-        else
-          keys[:folderkey] = folder.key
-        end
+        # if folder.nil?
+          # keys[:folderkey] = c.xpath('./folderkey').text
+        # else
+          # keys[:folderkey] = folder.key
+        # end
+        keys[:folderkey] = folder_key
       end
       keys[:mful_config] = doc.xpath('//mediafire/MFULConfig').text
 
@@ -208,7 +222,12 @@ module Mediafire
         sleep 0.5
       end
 
-      pick_object(keys[:quickkey], 'file', folder)
+      page = open("http://www.mediafire.com/api/file/get_info.php?session_token=#{session_token}&quick_key=#{keys[:quickkey]}&version=1")
+      doc = Nokogiri::XML(page.read)
+
+      hash_values = Hash.from_xml(doc.css("file_info").first.to_s)["file_info"]
+      StoreFile.new(hash_values)
+      # pick_object(keys[:quickkey], 'file', folder_key)
     end
 
 
