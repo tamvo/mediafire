@@ -230,6 +230,13 @@ module Mediafire
       # pick_object(keys[:quickkey], 'file', folder_key)
     end
 
+    def info_file(quickkey)
+      page = open("http://www.mediafire.com/api/file/get_info.php?session_token=#{session_token}&quick_key=#{keys[:quickkey]}&version=1")
+      doc = Nokogiri::XML(page.read)
+
+      hash_values = Hash.from_xml(doc.css("file_info").first.to_s)["file_info"]
+      StoreFile.new(hash_values)
+    end
 
     #def webupload(url, folder)
     #end
