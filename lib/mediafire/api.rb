@@ -480,6 +480,10 @@ module Mediafire
       @loggedin
     end
 
+    def loggedin=(value)
+      @loggedin = value
+    end
+
     private
 
     # Low level APIs
